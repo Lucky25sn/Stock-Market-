@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockML · Prediction Pipeline</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="style.css" rel="stylesheet">
+
+</head>
+<body>
+<div class="wrap">
+
+<!-- ══════════════ HEADER ══════════════════════════════════ -->
+<header class="hdr a d1">
+  <div class="hdr-icon">📈</div>
+  <div class="hdr-meta">
+    <h1>StockML · Prediction Pipeline</h1>
+    <p>AAPL · 1,200 synthetic days (GBM) · 4 classifiers · 25 technical features · TimeSeriesCV</p>
+  </div>
+  <div class="hdr-pills">
+    <span class="chip chip-blue">scikit-learn</span>
+    <span class="chip chip-violet">4 Models</span>
+    <span class="chip chip-teal">Backtest Engine</span>
+    <span class="chip chip-amber">25 Features</span>
+  </div>
+</header>
+
+<!-- ══════════════ PIPELINE ════════════════════════════════ -->
+<div class="pipeline-wrap a d2">
+  <div class="pipeline-inner">
+    <div class="pipe-node"><div class="pipe-box pb0">📦 Raw OHLCV</div><div class="pipe-label">Ingestion</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-node"><div class="pipe-box pb1">🔧 Feature Eng.</div><div class="pipe-label">25 indicators</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-node"><div class="pipe-box pb2">✂️ Temporal Split</div><div class="pipe-label">70 / 15 / 15 %</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-node"><div class="pipe-box pb3">⚖️ StandardScaler</div><div class="pipe-label">Normalise</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-node"><div class="pipe-box pb4">🤖 4 Classifiers</div><div class="pipe-label">LR · RF · GB · SVM</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-node"><div class="pipe-box pb5">📊 TimeSeriesCV</div><div class="pipe-label">5-fold</div></div>
+    <div class="pipe-arr">→</div>
+    <div class="pipe-node"><div class="pipe-box pb6">📈 Backtest</div><div class="pipe-label">Strategy eval</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ KPIs ═════════════════════════════════════ -->
+<div class="sec-hdr a d2">
+  <h2>Key Metrics</h2><div class="sec-rule"></div>
+</div>
+<div class="kpi-grid a d3">
+  <div class="kpi" style="--kc:var(--cobalt)">
+    <div class="kpi-lbl">Best Accuracy</div>
+    <div class="kpi-val" id="kv-acc">—</div>
+    <div class="kpi-note" id="kn-acc">—</div>
+  </div>
+  <div class="kpi" style="--kc:var(--violet)">
+    <div class="kpi-lbl">Best ROC-AUC</div>
+    <div class="kpi-val" id="kv-auc">—</div>
+    <div class="kpi-note" id="kn-auc">—</div>
+  </div>
+  <div class="kpi" style="--kc:var(--emerald)">
+    <div class="kpi-lbl">Best Sharpe</div>
+    <div class="kpi-val" id="kv-sh">—</div>
+    <div class="kpi-note" id="kn-sh">—</div>
+  </div>
+  <div class="kpi" style="--kc:var(--amber)">
+    <div class="kpi-lbl">Top Strategy Return</div>
+    <div class="kpi-val" id="kv-ret">—</div>
+    <div class="kpi-note" id="kn-ret">—</div>
+  </div>
+  <div class="kpi" style="--kc:var(--teal)">
+    <div class="kpi-lbl">Train Samples</div>
+    <div class="kpi-val">805</div>
+    <div class="kpi-note">70% of 1,150 rows</div>
+  </div>
+  <div class="kpi" style="--kc:var(--rose)">
+    <div class="kpi-lbl">Features</div>
+    <div class="kpi-val">25</div>
+    <div class="kpi-note">Technical indicators</div>
+  </div>
+</div>
+
+<!-- ══════════════ TECHNICAL ANALYSIS ═══════════════════════ -->
+<div class="sec-hdr a d3" style="margin-top:36px">
+  <h2>Technical Analysis</h2><div class="sec-rule"></div>
+  <span class="sec-sub">Last 120 trading days</span>
+</div>
+
+<div class="sig-strip a d4" id="sigStrip"></div>
+
+<div class="tab-row a d4">
+  <button class="tab on" onclick="showTab('price',this)">Price & amp; SMA</button>
+  <button class="tab" onclick="showTab('rsi',this)">RSI (14)</button>
+  <button class="tab" onclick="showTab('macd',this)">MACD</button>
+</div>
+
+<div class="g2 a d4">
+  <div class="card" id="tp-price">
+    <div class="card-title"><div class="cdot" style="background:var(--cobalt)"></div>Price + SMA 20</div>
+    <canvas id="priceC"></canvas>
+  </div>
+  <div class="card" id="tp-rsi" style="display:none">
+    <div class="card-title"><div class="cdot" style="background:var(--violet)"></div>RSI (14) — Overbought / Oversold</div>
+    <canvas id="rsiC"></canvas>
+  </div>
+  <div class="card" id="tp-macd" style="display:none">
+    <div class="card-title"><div class="cdot" style="background:var(--amber)"></div>MACD Indicator</div>
+    <canvas id="macdC"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--emerald)"></div>RSI Momentum — Coloured by Zone</div>
+    <canvas id="rsiMini"></canvas>
+  </div>
+</div>
+
+<!-- ══════════════ MODEL PERFORMANCE ════════════════════════ -->
+<div class="sec-hdr a d5" style="margin-top:36px">
+  <h2>Model Performance</h2><div class="sec-rule"></div>
+</div>
+<div class="g3 a d5">
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--cobalt)"></div>Accuracy &amp; ROC-AUC</div>
+    <canvas id="perfC"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--violet)"></div>ROC Curves</div>
+    <canvas id="rocC"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--teal)"></div>Cross-Validation (5-fold ±σ)</div>
+    <canvas id="cvC"></canvas>
+  </div>
+</div>
+
+<!-- ══════════════ MODEL TABLE ══════════════════════════════ -->
+<div class="sec-hdr a d5" style="margin-top:36px">
+  <h2>Model Comparison</h2><div class="sec-rule"></div>
+</div>
+<div class="card a d5">
+  <table class="mtbl" id="mtbl"></table>
+</div>
+
+<!-- ══════════════ BACKTEST ═════════════════════════════════ -->
+<div class="sec-hdr a d6" style="margin-top:36px">
+  <h2>Strategy Backtest</h2><div class="sec-rule"></div>
+  <span class="sec-sub">threshold = 0.54 · long-only · no transaction costs</span>
+</div>
+<div class="g32 a d6">
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--emerald)"></div>Equity Curves vs Buy &amp; Hold</div>
+    <canvas id="btC"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--amber)"></div>Strategy Metrics</div>
+    <div class="bt-grid" id="btCards"></div>
+  </div>
+</div>
+
+<!-- ══════════════ INSIGHTS ═════════════════════════════════ -->
+<div class="sec-hdr a d7" style="margin-top:36px">
+  <h2>Feature Insights</h2><div class="sec-rule"></div>
+</div>
+<div class="g23 a d7">
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--cobalt)"></div>Feature Importances — Random Forest (top 12)</div>
+    <div class="feat-list" id="featList"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><div class="cdot" style="background:var(--violet)"></div>Confusion Matrix Breakdown — All Models</div>
+    <canvas id="predC"></canvas>
+  </div>
+</div>
+
+<!-- ══════════════ CONFUSION MATRICES ═══════════════════════ -->
+<div class="sec-hdr a d8" style="margin-top:36px">
+  <h2>Confusion Matrices</h2><div class="sec-rule"></div>
+</div>
+<div class="g4 a d8" id="cmGrid"></div>
+
+<!-- ══════════════ FOOTER ════════════════════════════════════ -->
+<footer class="footer a d8">
+  <div class="footer-l">StockML · Data Science Pipeline · Geometric Brownian Motion · scikit-learn</div>
+  <div class="footer-tags">
+    <span class="ftag">sklearn</span><span class="ftag">numpy</span><span class="ftag">pandas</span>
+    <span class="ftag">GBM</span><span class="ftag">RSI</span><span class="ftag">MACD</span>
+    <span class="ftag">Bollinger</span><span class="ftag">ATR</span><span class="ftag">OBV</span>
+    <span class="ftag">TimeSeriesCV</span><span class="ftag">Backtest</span>
+  </div>
+</footer>
+</div><!-- /wrap -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     DATA + LOGIC
+═══════════════════════════════════════════════════════════ -->
+<script src="data.js"></script>
+</body>
+</html>
